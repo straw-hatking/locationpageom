@@ -11,8 +11,17 @@
         function showPosition(position) {
             var lat = position.coords.latitude;
             var lon = position.coords.longitude;
+            var alt = position.coords.altitude;
             var locationElement = document.getElementById('location');
-            locationElement.innerHTML = "Latitude: " + lat + "<br>Longitude: " + lon;
+
+            var locationString = "Latitude: " + lat + "<br>Longitude: " + lon;
+            if (alt !== null) {
+                locationString += "<br>Altitude: " + alt + " meters";
+            } else {
+                locationString += "<br>Altitude information is not available.";
+            }
+
+            locationElement.innerHTML = locationString;
         }
 
         function showError(error) {
