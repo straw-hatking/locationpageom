@@ -12,6 +12,25 @@
     <button id="download-btn" style="display:none;" onclick="downloadQRCode()">Download QR Code</button>
 
     <script>
+        var previousLat, previousLon, previousAlt;
+        
+        function generateQRCode(lat, lon, alt) {
+            // Generate a Google Maps link with coordinates
+            var mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+
+            // Generate QR code with the Google Maps link
+            var qrcodeContainer = document.getElementById("qrcode");
+            qrcodeContainer.innerHTML = "";
+            new QRCode(qrcodeContainer, {
+                text: mapsLink,
+                width: 256,
+                height: 256
+            });
+
+            // Show download button
+            document.getElementById("download-btn").style.display = "block";
+        }
+
         function showPosition(position) {
             var lat = position.coords.latitude;
             var lon = position.coords.longitude;
@@ -27,20 +46,15 @@
 
             locationElement.innerHTML = locationString;
 
-            // Generate a Google Maps link with coordinates
-            var mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+            // Check if coordinates have changed
+            if (lat !== previousLat || lon !== previousLon || alt !== previousAlt) {
+                previousLat = lat;
+                previousLon = lon;
+                previousAlt = alt;
 
-            // Generate QR code with the Google Maps link
-            var qrcodeContainer = document.getElementById("qrcode");
-            qrcodeContainer.innerHTML = "";
-            new QRCode(qrcodeContainer, {
-                text: mapsLink,
-                width: 256,
-                height: 256
-            });
-
-            // Show download button
-            document.getElementById("download-btn").style.display = "block";
+                // Generate new QR code
+                generateQRCode(lat, lon, alt);
+            }
         }
 
         function showError(error) {
@@ -63,7 +77,11 @@
 
         function getLocation() {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(showPosition, showError);
+                navigator.geolocation.watchPosition(showPosition, showError, {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                });
             } else {
                 document.getElementById('location').innerHTML = "Geolocation is not supported by this browser.";
             }
