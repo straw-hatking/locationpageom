@@ -3,10 +3,13 @@
 <head>
     <title>Get Current Location</title>
     <link rel="stylesheet" type="text/css" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
     <h1>Current Location</h1>
     <p id="location">Fetching location...</p>
+    <div id="qrcode"></div>
+    <button id="download-btn" style="display:none;" onclick="downloadQRCode()">Download QR Code</button>
 
     <script>
         function showPosition(position) {
@@ -23,6 +26,21 @@
             }
 
             locationElement.innerHTML = locationString;
+
+            // Generate a Google Maps link with coordinates
+            var mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
+
+            // Generate QR code with the Google Maps link
+            var qrcodeContainer = document.getElementById("qrcode");
+            qrcodeContainer.innerHTML = "";
+            new QRCode(qrcodeContainer, {
+                text: mapsLink,
+                width: 256,
+                height: 256
+            });
+
+            // Show download button
+            document.getElementById("download-btn").style.display = "block";
         }
 
         function showError(error) {
@@ -49,6 +67,15 @@
             } else {
                 document.getElementById('location').innerHTML = "Geolocation is not supported by this browser.";
             }
+        }
+
+        function downloadQRCode() {
+            var qrCanvas = document.querySelector('#qrcode canvas');
+            var qrImage = qrCanvas.toDataURL("image/png");
+            var downloadLink = document.createElement("a");
+            downloadLink.href = qrImage;
+            downloadLink.download = "qrcode.png";
+            downloadLink.click();
         }
 
         window.onload = getLocation;
