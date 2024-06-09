@@ -7,23 +7,42 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-direction: column;
     height: 100vh;
-    .element {
-        border: 5px solid #579234;
-      }
+    background-color: #f0f0f0;
+    text-align: center;
 }
 
 h1 {
-    color: #000000;
+    color: #333;
+    font-size: 36px;
 }
 
 #location {
-    justify-content: center;
-    align-items: center;
-    background-color: #00fff7;
+    background-color: #fff;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    max-width: 300px;
+    max-width: 600px;
     text-align: center;
+    font-size: 50px;
+    margin-bottom: 20px;
+}
+
+#qrcode {
+    margin-top: 20px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 18px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
 }
