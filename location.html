@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Generator with Location</title>
+    <title>QR Code Generator with IPinfo Location</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body {
@@ -112,31 +112,31 @@
     </table>
 
     <script>
+        const IPINFO_API_KEY = 'YOUR_IPINFO_API_KEY';
         let currentLocation = {};
         const locationHistory = JSON.parse(localStorage.getItem('locationHistory')) || [];
 
         function getLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition);
-            } else {
-                alert("Geolocation is not supported by this browser.");
-            }
-        }
-
-        function showPosition(position) {
-            currentLocation = {
-                x: position.coords.latitude,
-                y: position.coords.longitude,
-                z: position.coords.altitude || 0  // altitude might be null
-            };
-
-            const dateTime = new Date().toLocaleString();
-            locationHistory.push({
-                dateTime: dateTime,
-                ...currentLocation
-            });
-            localStorage.setItem('locationHistory', JSON.stringify(locationHistory));
-            appendToLocationHistoryTable(dateTime, currentLocation);
+            fetch(`https://ipinfo.io/json?token=${IPINFO_API_KEY}`)
+                .then(response => response.json())
+                .then(data => {
+                    const coords = data.loc.split(',');
+                    currentLocation = {
+                        x: parseFloat(coords[0]),
+                        y: parseFloat(coords[1]),
+                        z: 0  // IPinfo does not provide altitude
+                    };
+                    const dateTime = new Date().toLocaleString();
+                    locationHistory.push({
+                        dateTime: dateTime,
+                        ...currentLocation
+                    });
+                    localStorage.setItem('locationHistory', JSON.stringify(locationHistory));
+                    appendToLocationHistoryTable(dateTime, currentLocation);
+                })
+                .catch(error => {
+                    alert("Error fetching location from IPinfo: " + error);
+                });
         }
 
         function appendToLocationHistoryTable(dateTime, location) {
@@ -175,6 +175,8 @@
                     width: 256,
                     height: 256
                 });
+            } else {
+                alert('Please ensure that all fields are filled and location is available.');
             }
         }
 
