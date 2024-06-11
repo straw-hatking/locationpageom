@@ -1,102 +1,152 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Get Current Location</title>
-    <link rel="stylesheet" type="text/css" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator with Location</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-    <h1>Current Location</h1>
-    <p id="location">Fetching location...</p>
+    <h1>Product Information</h1>
+    <form id="productForm">
+        <label for="productName">Name of Product:</label>
+        <input type="text" id="productName" name="productName" required><br><br>
+        <label for="productPrice">Price of Product:</label>
+        <input type="text" id="productPrice" name="productPrice" required><br><br>
+        <label for="generationDate">Date of Generation:</label>
+        <input type="text" id="generationDate" name="generationDate" readonly><br><br>
+        <input type="submit" value="Generate QR Code">
+    </form>
+    
+    <h2>Generated QR Code:</h2>
     <div id="qrcode"></div>
-    <button id="download-btn" style="display:none;" onclick="downloadQRCode()">Download QR Code</button>
+    <button id="downloadBtn">Download QR Code</button>
+    <button id="printBtn">Print QR Code</button>
+
+    <h2>Location History:</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Latitude (X)</th>
+                <th>Longitude (Y)</th>
+                <th>Altitude (Z)</th>
+            </tr>
+        </thead>
+        <tbody id="locationHistory">
+            <!-- Location history will be appended here -->
+        </tbody>
+    </table>
 
     <script>
-        var previousLat, previousLon, previousAlt;
-        
-        function generateQRCode(lat, lon, alt) {
-            // Generate a Google Maps link with coordinates
-            var mapsLink = `https://www.google.com/maps?q=${lat},${lon}`;
-
-            // Generate QR code with the Google Maps link
-            var qrcodeContainer = document.getElementById("qrcode");
-            qrcodeContainer.innerHTML = "";
-            new QRCode(qrcodeContainer, {
-                text: mapsLink,
-                width: 256,
-                height: 256
-            });
-
-            // Show download button
-            document.getElementById("download-btn").style.display = "block";
-        }
-
-        function showPosition(position) {
-            var lat = position.coords.latitude;
-            var lon = position.coords.longitude;
-            var alt = position.coords.altitude;
-            var locationElement = document.getElementById('location');
-
-            var locationString = "Latitude: " + lat + "<br>Longitude: " + lon;
-            if (alt !== null) {
-                locationString += "<br>Altitude: " + alt + " meters";
-            } else {
-                locationString += "<br>Altitude information is not available.";
-            }
-
-            locationElement.innerHTML = locationString;
-
-            // Check if coordinates have changed
-            if (lat !== previousLat || lon !== previousLon || alt !== previousAlt) {
-                previousLat = lat;
-                previousLon = lon;
-                previousAlt = alt;
-
-                // Generate new QR code
-                generateQRCode(lat, lon, alt);
-            }
-        }
-
-        function showError(error) {
-            var locationElement = document.getElementById('location');
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    locationElement.innerHTML = "User denied the request for Geolocation.";
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    locationElement.innerHTML = "Location information is unavailable.";
-                    break;
-                case error.TIMEOUT:
-                    locationElement.innerHTML = "The request to get user location timed out.";
-                    break;
-                case error.UNKNOWN_ERROR:
-                    locationElement.innerHTML = "An unknown error occurred.";
-                    break;
-            }
-        }
+        let currentLocation = {};
+        const locationHistory = JSON.parse(localStorage.getItem('locationHistory')) || [];
 
         function getLocation() {
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition, showError, {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 5000
-                });
+                navigator.geolocation.watchPosition(showPosition);
             } else {
-                document.getElementById('location').innerHTML = "Geolocation is not supported by this browser.";
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function showPosition(position) {
+            currentLocation = {
+                x: position.coords.latitude,
+                y: position.coords.longitude,
+                z: position.coords.altitude || 0  // altitude might be null
+            };
+
+            const dateTime = new Date().toLocaleString();
+            locationHistory.push({
+                dateTime: dateTime,
+                ...currentLocation
+            });
+            localStorage.setItem('locationHistory', JSON.stringify(locationHistory));
+            appendToLocationHistoryTable(dateTime, currentLocation);
+        }
+
+        function appendToLocationHistoryTable(dateTime, location) {
+            const tableBody = document.getElementById('locationHistory');
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${dateTime}</td>
+                <td>${location.x}</td>
+                <td>${location.y}</td>
+                <td>${location.z}</td>
+            `;
+            tableBody.appendChild(newRow);
+        }
+
+        function populateLocationHistoryTable() {
+            const tableBody = document.getElementById('locationHistory');
+            tableBody.innerHTML = '';
+            locationHistory.forEach(entry => {
+                appendToLocationHistoryTable(entry.dateTime, entry);
+            });
+        }
+
+        function generateQRCode() {
+            const productName = document.getElementById('productName').value;
+            const productPrice = document.getElementById('productPrice').value;
+            const generationDate = document.getElementById('generationDate').value;
+
+            if (productName && productPrice && currentLocation.x !== undefined) {
+                const locationLink = `http://maps.google.com/?q=${currentLocation.x},${currentLocation.y},${currentLocation.z}`;
+                const qrData = `Product Name: ${productName}\nPrice: ${productPrice}\nDate: ${generationDate}\nLocation: ${locationLink}`;
+
+                const qrcodeDiv = document.getElementById('qrcode');
+                qrcodeDiv.innerHTML = '';
+                new QRCode(qrcodeDiv, {
+                    text: qrData,
+                    width: 256,
+                    height: 256
+                });
             }
         }
 
         function downloadQRCode() {
-            var qrCanvas = document.querySelector('#qrcode canvas');
-            var qrImage = qrCanvas.toDataURL("image/png");
-            var downloadLink = document.createElement("a");
-            downloadLink.href = qrImage;
-            downloadLink.download = "qrcode.png";
-            downloadLink.click();
+            const qrcodeCanvas = document.querySelector('#qrcode canvas');
+            if (qrcodeCanvas) {
+                const dataUrl = qrcodeCanvas.toDataURL("image/png");
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'qrcode.png';
+                link.click();
+            } else {
+                alert('Please generate a QR code first.');
+            }
         }
 
-        window.onload = getLocation;
+        function printQRCode() {
+            const qrcodeDiv = document.getElementById('qrcode');
+            if (qrcodeDiv.innerHTML) {
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write('<html><head><title>Print QR Code</title></head><body>');
+                printWindow.document.write(qrcodeDiv.innerHTML);
+                printWindow.document.write('</body></html>');
+                printWindow.document.close();
+                printWindow.print();
+            } else {
+                alert('Please generate a QR code first.');
+            }
+        }
+
+        document.getElementById('productForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const now = new Date();
+            document.getElementById('generationDate').value = now.toLocaleString();
+            generateQRCode();
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', downloadQRCode);
+        document.getElementById('printBtn').addEventListener('click', printQRCode);
+
+        // Populate the location history table on page load
+        populateLocationHistoryTable();
+
+        // Get the initial location when the page loads
+        getLocation();
     </script>
 </body>
 </html>
