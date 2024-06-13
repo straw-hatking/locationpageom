@@ -82,22 +82,56 @@
     </table>
 
     <script>
-        let currentLocation = {};
-        const locationHistory = JSON.parse(localStorage.getItem('locationHistory')) || [];
+        function refreshPage() {
+            window.location.reload();
+        }
 
-        function showPosition(position) {
-            currentLocation = {
-                x: position.coords.latitude,
-                y: position.coords.longitude,
-                z: position.coords.altitude || 0  // altitude might be null
-            };
-            const dateTime = new Date().toLocaleString();
-            locationHistory.push({
-                dateTime: dateTime,
-                ...currentLocation
+        function resetPage() {
+            fetch('https://my-project-server.vercel.app/api/location-history', {
+                method: 'DELETE',
+            })
+            .then(response => {
+                if (response.ok) {
+                    populateLocationHistoryTable([]);
+                }
             });
-            localStorage.setItem('locationHistory', JSON.stringify(locationHistory));
-            appendToLocationHistoryTable(dateTime, currentLocation);
+        }
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.permissions.query({ name: 'geolocation' }).then(permissionStatus => {
+                    if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
+                        navigator.geolocation.getCurrentPosition(position => {
+                            const location = {
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude,
+                                altitude: position.coords.altitude || 0,
+                                timestamp: new Date().toLocaleString()
+                            };
+                            fetch('https://my-project-server.vercel.app/api/location', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(location)
+                            })
+                            .then(response => {
+                                if (response.ok) {
+                                    appendToLocationHistoryTable(location);
+                                }
+                            });
+                        }, showError, {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        });
+                    } else if (permissionStatus.state === 'denied') {
+                        alert("Permission for geolocation access is denied.");
+                    }
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
         }
 
         function showError(error) {
@@ -117,69 +151,33 @@
             }
         }
 
-        function getLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(showPosition, showError, {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                });
-            } else {
-                alert("Geolocation is not supported by this browser.");
-            }
-        }
-
-        function appendToLocationHistoryTable(dateTime, location) {
+        function appendToLocationHistoryTable(location) {
             const tableBody = document.getElementById('locationHistory');
             const newRow = document.createElement('tr');
             newRow.innerHTML = `
-                <td>${dateTime}</td>
-                <td>${location.x}</td>
-                <td>${location.y}</td>
-                <td>${location.z}</td>
+                <td>${location.timestamp}</td>
+                <td>${location.latitude}</td>
+                <td>${location.longitude}</td>
+                <td>${location.altitude}</td>
             `;
             tableBody.appendChild(newRow);
         }
 
-        function populateLocationHistoryTable() {
+        function populateLocationHistoryTable(locations) {
             const tableBody = document.getElementById('locationHistory');
             tableBody.innerHTML = '';
-            locationHistory.forEach(entry => {
-                appendToLocationHistoryTable(entry.dateTime, entry);
+            locations.forEach(location => {
+                appendToLocationHistoryTable(location);
             });
         }
 
-        function refreshPage() {
-            window.location.reload();
-        }
-
-        function resetPage() {
-            localStorage.removeItem('locationHistory');
-            locationHistory.length = 0;
-            populateLocationHistoryTable();
-        }
-
-        function requestFullScreen() {
-            const docElm = document.documentElement;
-            if (docElm.requestFullscreen) {
-                docElm.requestFullscreen();
-            } else if (docElm.mozRequestFullScreen) { // Firefox
-                docElm.mozRequestFullScreen();
-            } else if (docElm.webkitRequestFullScreen) { // Chrome, Safari, and Opera
-                docElm.webkitRequestFullScreen();
-            } else if (docElm.msRequestFullscreen) { // IE/Edge
-                docElm.msRequestFullscreen();
-            }
-        }
-
-        // Populate the location history table on page load
-        populateLocationHistoryTable();
+        // Get location history from server on page load
+        fetch('https://my-project-server.vercel.app/api/location-history')
+            .then(response => response.json())
+            .then(data => populateLocationHistoryTable(data));
 
         // Get the current location when the page loads
         getLocation();
-
-        // Request full screen when the page loads
-        window.onload = requestFullScreen;
     </script>
 </body>
 </html>
