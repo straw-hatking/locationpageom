@@ -64,6 +64,7 @@
     <div class="button-container">
         <button onclick="refreshPage()">Refresh Page</button>
         <button onclick="resetPage()">Reset Page</button>
+        <button onclick="showAccessLog()">Show Access Log</button>
     </div>
 
     <h2>Location History:</h2>
@@ -74,6 +75,8 @@
                 <th>Latitude</th>
                 <th>Longitude</th>
                 <th>Altitude</th>
+                <th>Accessed By</th>
+                <th>Access Time</th>
             </tr>
         </thead>
         <tbody id="locationHistory">
@@ -82,56 +85,41 @@
     </table>
 
     <script>
-        function refreshPage() {
-            window.location.reload();
-        }
+        let currentLocation = {};
+        const locationHistory = JSON.parse(localStorage.getItem('locationHistory')) || [];
+        const accessLog = JSON.parse(localStorage.getItem('accessLog')) || [];
 
-        function resetPage() {
-            fetch('https://my-project-server.vercel.app/api/location-history', {
-                method: 'DELETE',
-            })
-            .then(response => {
-                if (response.ok) {
-                    populateLocationHistoryTable([]);
-                }
+        function showPosition(position) {
+            currentLocation = {
+                x: position.coords.latitude,
+                y: position.coords.longitude,
+                z: position.coords.altitude || 0  // altitude might be null
+            };
+            const dateTime = new Date().toLocaleString();
+            const accessedBy = getAccessedByName(); // Get name of user or device accessing location
+            locationHistory.push({
+                dateTime: dateTime,
+                ...currentLocation,
+                accessedBy: accessedBy,
+                accessTime: new Date().toLocaleString()
             });
+            localStorage.setItem('locationHistory', JSON.stringify(locationHistory));
+            appendToLocationHistoryTable(dateTime, currentLocation, accessedBy, dateTime);
+            addToAccessLog(accessedBy, dateTime); // Add to access log
         }
 
-        function getLocation() {
-            if (navigator.geolocation) {
-                navigator.permissions.query({ name: 'geolocation' }).then(permissionStatus => {
-                    if (permissionStatus.state === 'granted' || permissionStatus.state === 'prompt') {
-                        navigator.geolocation.getCurrentPosition(position => {
-                            const location = {
-                                latitude: position.coords.latitude,
-                                longitude: position.coords.longitude,
-                                altitude: position.coords.altitude || 0,
-                                timestamp: new Date().toLocaleString()
-                            };
-                            fetch('https://my-project-server.vercel.app/api/location', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify(location)
-                            })
-                            .then(response => {
-                                if (response.ok) {
-                                    appendToLocationHistoryTable(location);
-                                }
-                            });
-                        }, showError, {
-                            enableHighAccuracy: true,
-                            timeout: 10000,
-                            maximumAge: 0
-                        });
-                    } else if (permissionStatus.state === 'denied') {
-                        alert("Permission for geolocation access is denied.");
-                    }
-                });
-            } else {
-                alert("Geolocation is not supported by this browser.");
-            }
+        function getAccessedByName() {
+            // Example: You can prompt the user for their name or identifier
+            // This is a simplified example, adjust as per your actual implementation
+            return 'User A';
+        }
+
+        function addToAccessLog(accessedBy, accessTime) {
+            accessLog.push({
+                accessedBy: accessedBy,
+                accessTime: accessTime
+            });
+            localStorage.setItem('accessLog', JSON.stringify(accessLog));
         }
 
         function showError(error) {
@@ -151,30 +139,58 @@
             }
         }
 
-        function appendToLocationHistoryTable(location) {
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition, showError, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function appendToLocationHistoryTable(dateTime, location, accessedBy, accessTime) {
             const tableBody = document.getElementById('locationHistory');
             const newRow = document.createElement('tr');
             newRow.innerHTML = `
-                <td>${location.timestamp}</td>
-                <td>${location.latitude}</td>
-                <td>${location.longitude}</td>
-                <td>${location.altitude}</td>
+                <td>${dateTime}</td>
+                <td>${location.x}</td>
+                <td>${location.y}</td>
+                <td>${location.z}</td>
+                <td>${accessedBy}</td>
+                <td>${accessTime}</td>
             `;
             tableBody.appendChild(newRow);
         }
 
-        function populateLocationHistoryTable(locations) {
+        function populateLocationHistoryTable() {
             const tableBody = document.getElementById('locationHistory');
             tableBody.innerHTML = '';
-            locations.forEach(location => {
-                appendToLocationHistoryTable(location);
+            locationHistory.forEach(entry => {
+                appendToLocationHistoryTable(entry.dateTime, entry, entry.accessedBy, entry.accessTime);
             });
         }
 
-        // Get location history from server on page load
-        fetch('https://my-project-server.vercel.app/api/location-history')
-            .then(response => response.json())
-            .then(data => populateLocationHistoryTable(data));
+        function refreshPage() {
+            window.location.reload();
+        }
+
+        function resetPage() {
+            localStorage.removeItem('locationHistory');
+            localStorage.removeItem('accessLog');
+            locationHistory.length = 0;
+            accessLog.length = 0;
+            populateLocationHistoryTable();
+        }
+
+        function showAccessLog() {
+            alert("Access Log:\n" + JSON.stringify(accessLog, null, 2));
+        }
+
+        // Populate the location history table on page load
+        populateLocationHistoryTable();
 
         // Get the current location when the page loads
         getLocation();
