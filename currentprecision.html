@@ -56,6 +56,17 @@
             top: 50px; /* Adjust according to the height of the sticky button container */
             z-index: 1000;
         }
+        .access-form {
+            display: flex;
+            align-items: center;
+        }
+        .access-form input {
+            padding: 5px;
+            margin-right: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -84,10 +95,17 @@
         </tbody>
     </table>
 
+    <form class="access-form">
+        <label for="accessedByInput">Accessed By:</label>
+        <input type="text" id="accessedByInput" placeholder="Enter name or identifier">
+        <button type="button" onclick="updateAccessedBy()">Update</button>
+    </form>
+
     <script>
         let currentLocation = {};
         const locationHistory = JSON.parse(localStorage.getItem('locationHistory')) || [];
         const accessLog = JSON.parse(localStorage.getItem('accessLog')) || [];
+        let currentAccessedBy = ''; // Track current Accessed By value
 
         function showPosition(position) {
             currentLocation = {
@@ -96,7 +114,7 @@
                 z: position.coords.altitude || 0  // altitude might be null
             };
             const dateTime = new Date().toLocaleString();
-            const accessedBy = getAccessedByName(); // Get name of user or device accessing location
+            const accessedBy = currentAccessedBy || 'Unknown'; // Use current Accessed By or default to 'Unknown'
             locationHistory.push({
                 dateTime: dateTime,
                 ...currentLocation,
@@ -111,7 +129,7 @@
         function getAccessedByName() {
             // Example: You can prompt the user for their name or identifier
             // This is a simplified example, adjust as per your actual implementation
-            return 'User A';
+            return currentAccessedBy;
         }
 
         function addToAccessLog(accessedBy, accessTime) {
@@ -187,6 +205,12 @@
 
         function showAccessLog() {
             alert("Access Log:\n" + JSON.stringify(accessLog, null, 2));
+        }
+
+        function updateAccessedBy() {
+            currentAccessedBy = document.getElementById('accessedByInput').value.trim();
+            // Update the form input placeholder
+            document.getElementById('accessedByInput').placeholder = currentAccessedBy;
         }
 
         // Populate the location history table on page load
