@@ -80,8 +80,8 @@
     </div>
 
     <div class="button-container" id="buttonContainer" style="display: none;">
-        <button onclick="refreshPage()">Refresh Page</button>
-        <button onclick="resetPage()">Reset Page</button>
+        <button onclick="refreshCoordinates()">Refresh Coordinates</button>
+        <button onclick="resetCoordinates()">Reset Coordinates</button>
         <button onclick="showAccessLog()">Show Access Log</button>
     </div>
 
@@ -197,15 +197,12 @@
             });
         }
 
-        function refreshPage() {
-            window.location.reload();
+        function refreshCoordinates() {
+            getLocation();
         }
 
-        function resetPage() {
-            localStorage.removeItem('locationHistory');
-            localStorage.removeItem('accessLog');
-            locationHistory.length = 0;
-            accessLog.length = 0;
+        function resetCoordinates() {
+            currentLocation = {};
             populateLocationHistoryTable();
         }
 
