@@ -29,10 +29,30 @@
         th {
             background-color: #f2f2f2;
         }
+        .button-container {
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
     <h1>Device Location Tracker</h1>
+
+    <div class="button-container">
+        <button onclick="refreshPage()">Refresh Page</button>
+        <button onclick="resetPage()">Reset Page</button>
+    </div>
 
     <h2>Location History:</h2>
     <table>
@@ -115,6 +135,16 @@
             locationHistory.forEach(entry => {
                 appendToLocationHistoryTable(entry.dateTime, entry);
             });
+        }
+
+        function refreshPage() {
+            window.location.reload();
+        }
+
+        function resetPage() {
+            localStorage.removeItem('locationHistory');
+            locationHistory.length = 0;
+            populateLocationHistoryTable();
         }
 
         // Populate the location history table on page load
