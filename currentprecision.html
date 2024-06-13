@@ -105,7 +105,7 @@
     <script>
         let currentLocation = {};
         let currentAccessedBy = ''; // Track current Accessed By value
-        const locationHistory = JSON.parse(localStorage.getItem('locationHistory')) || [];
+        let locationHistory = JSON.parse(localStorage.getItem('locationHistory')) || [];
         const accessLog = JSON.parse(localStorage.getItem('accessLog')) || [];
 
         function startTracking() {
@@ -135,15 +135,6 @@
             });
             localStorage.setItem('locationHistory', JSON.stringify(locationHistory));
             appendToLocationHistoryTable(dateTime, currentLocation, currentAccessedBy, dateTime);
-            addToAccessLog(currentAccessedBy, dateTime); // Add to access log
-        }
-
-        function addToAccessLog(accessedBy, accessTime) {
-            accessLog.push({
-                accessedBy: accessedBy,
-                accessTime: accessTime
-            });
-            localStorage.setItem('accessLog', JSON.stringify(accessLog));
         }
 
         function showError(error) {
@@ -203,11 +194,25 @@
 
         function resetCoordinates() {
             currentLocation = {};
+            locationHistory = [];
             populateLocationHistoryTable();
         }
 
         function showAccessLog() {
+            // Add current coordinates to access log before showing
+            if (currentAccessedBy && Object.keys(currentLocation).length !== 0) {
+                addToAccessLog(currentAccessedBy, new Date().toLocaleString());
+            }
             alert("Access Log:\n" + JSON.stringify(accessLog, null, 2));
+        }
+
+        function addToAccessLog(accessedBy, accessTime) {
+            accessLog.push({
+                accessedBy: accessedBy,
+                accessTime: accessTime,
+                location: currentLocation  // Add current coordinates to access log
+            });
+            localStorage.setItem('accessLog', JSON.stringify(accessLog));
         }
 
         // Populate the location history table on page load
