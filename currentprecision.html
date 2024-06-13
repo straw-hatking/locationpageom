@@ -11,8 +11,31 @@
             margin: 0;
             padding: 20px;
         }
-        h1, h2 {
+        h1 {
             color: #333;
+            padding-top: 20px;
+        }
+        .button-container {
+            position: -webkit-sticky; /* Safari */
+            position: sticky;
+            top: 0;
+            background-color: #f4f4f4;
+            padding: 10px 0;
+            margin-bottom: 20px;
+            z-index: 1000;
+            border-bottom: 1px solid #ddd;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
         }
         table {
             width: 100%;
@@ -28,21 +51,10 @@
         }
         th {
             background-color: #f2f2f2;
-        }
-        .button-container {
-            margin-bottom: 20px;
-        }
-        button {
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 4px;
-            margin-right: 10px;
-        }
-        button:hover {
-            background-color: #0056b3;
+            position: -webkit-sticky; /* Safari */
+            position: sticky;
+            top: 50px; /* Adjust according to the height of the sticky button container */
+            z-index: 1000;
         }
     </style>
 </head>
