@@ -68,6 +68,9 @@
             border: 1px solid #ccc;
             font-size: 14px;
         }
+        .map-link {
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -95,12 +98,20 @@
                 <th>Altitude</th>
                 <th>Accessed By</th>
                 <th>Access Time</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody id="locationHistory">
             <!-- Location history will be appended here -->
         </tbody>
     </table>
+
+    <div id="mapModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="map"></div>
+        </div>
+    </div>
 
     <script>
         let currentLocation = {};
@@ -176,6 +187,7 @@
                 <td>${location.z}</td>
                 <td>${accessedBy}</td>
                 <td>${accessTime}</td>
+                <td><button onclick="showMap(${location.x}, ${location.y})" class="map-link">Show Map</button></td>
             `;
             tableBody.appendChild(newRow);
         }
@@ -213,6 +225,26 @@
                 location: currentLocation  // Add current coordinates to access log
             });
             localStorage.setItem('accessLog', JSON.stringify(accessLog));
+        }
+
+        function showMap(latitude, longitude) {
+            const mapModal = document.getElementById('mapModal');
+            const mapContent = document.getElementById('map');
+            mapContent.innerHTML = `<iframe width="100%" height="400" frameborder="0" style="border:0"
+                src="https://www.google.com/maps/embed/v1/place?q=${latitude},${longitude}&key=YOUR_API_KEY" allowfullscreen>
+                </iframe>`;
+            mapModal.style.display = 'block';
+
+            const spanClose = document.getElementsByClassName('close')[0];
+            spanClose.onclick = function() {
+                mapModal.style.display = 'none';
+            }
+
+            window.onclick = function(event) {
+                if (event.target == mapModal) {
+                    mapModal.style.display = 'none';
+                }
+            }
         }
 
         // Populate the location history table on page load
